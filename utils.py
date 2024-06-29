@@ -1,4 +1,5 @@
 '''Utilities for fine-tunning'''
+from random import shuffle
 import pandas as pd
 import pickle
 import numpy as np
@@ -181,6 +182,45 @@ class PrepareDataset:
         print('Dataset is saved via csv')
         print(f'Dataset path: {file_name_csv}')
     
+    def split_train_test(self, target_file: str, train_size: float = 0.8) -> None:
+        '''입력 파일(.trn)을 train/test 분류하여 저장
+            if train_size = 0.8,
+                train:test = 80%:20%
+        '''
+        with open(target_file, 'rt') as f:
+            data = f.readlines()
+            train_num = int(len(data) *train_size)
+        
+        ## If you set header (header=True) in csv file, you need following codes
+        # header = None
+        # if target_file.endswith('.csv'):
+        #     header = data[0]
+        #     data = data[1:]
+        #     train_num = int(len(data) *train_size)
+        shuffle(data)
+        data_train = sorted(data[0:train_num])
+        data_test = sorted(data[train_num:])
+        
+        # train_set 파일 저장
+        # - os.path.splitext를 사용하면 간소화될 듯
+        train_file = target_file.split('.')[:-1]
+        train_file = ''.join(train_file) + '_train.csv'
+        if target_file.startswith('.'):
+            train_file = '.' + train_file
+        with open(train_file, 'wt', encoding='utf-8') as f:
+            for line in data_train:
+                f.write(line)
+        print(f'Train_dataset saved -> {train_file} ({train_size*100:.1f}%)')
+        
+        # test_set 파일 저장
+        test_file = target_file.split('.')[:-1]
+        test_file = ''.join(test_file) + '_test.csv'
+        if target_file.startswith('.'):
+            test_file = '.' + test_file
+        with open(test_file, 'wt', encoding='utf-8') as f:
+            for line in data_test:
+                f.write(line)
+        print(f'Test_dataset saved -> {test_file} ({(1.0 - train_size)*100:.1f}%)')
     
         
 # 아래 각 단락들의 테스트 중 실제 사용될 코드묶음은 argparser로 file 하부 명령어에 등록함
@@ -205,11 +245,12 @@ if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     # target_file = 'data/info/train.trn'
     # prepareds.split_whole_data(target_file)
     
-    target_file = 'data/info/eval_clean.trn'
+    # target_file = 'data/info/eval_clean.trn'
     # data_dict = prepareds.get_dataset_dict(target_file)
     # print(data_dict)
     
     # prepareds.save_trn_to_pkl(target_file)
-    prepareds.save_trn_to_csv(target_file)
+    # prepareds.save_trn_to_csv(target_file)
     
-    
+    target_file = './data/info/train_KsponSpeech_02.csv'
+    prepareds.split_train_test(target_file)
