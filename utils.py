@@ -1,4 +1,6 @@
 '''Utilities for fine-tunning'''
+import pandas as pd
+import pickle
 import numpy as np
 import librosa as lr
 import soundfile as sf
@@ -132,7 +134,56 @@ class PrepareDataset:
                 print(f'File created -> {file_path}')
         print('Done!')
         
+    def get_dataset_dict(self, file_name: str, ext: str = 'wav') -> dict:
+        '''path_dir에 있는 파일을 dict 형태로 가공하여 리턴
+            return data_dict = {
+                'audio' : ['file_path1', 'file_path2', ...],
+                'text' : ['text1', 'text2', ...]
+        }'''
+        data_dic = {'path': [], 'sentence': []}
+        print(f'file_name: {file_name}')
+        with open(file_name, 'rt', encoding='utf-8') as f:
+            lines = f.readlines()
+            for line in lines:
+                audio, text = line.split('::')
+                audio = audio.strip()
+                audio = os.path.join( # 파이튜닝 시 데이터 줄 때 절대 경로를 받아서
+                    os.getcwd(), # /home/hyw/finetune
+                    self.VOICE_DIR.replace('./', ''), # VOICE_DIR가 ./로 시작할 수도 있어서
+                    audio
+                )
+                if audio.endswith('.pcm'):
+                    audio = audio.replace('.pcm', f'.{ext}')
+                text = text.strip()
+                data_dic['path'].append(audio)
+                data_dic['sentence'].append(text)
+        return data_dic
     
+    def save_trn_to_pkl(self, file_name: str) -> None:
+        '''.trn 파일을 dict(;json)로 만든 후 .pkl 바이너리로 그냥 저장(dump)'''
+        data_dict = self.get_dataset_dict(file_name)
+        # pickle file dump
+        file_name_pickle = file_name + '.dic.pkl'
+        with open(file_name_pickle, 'wb') as f:
+            pickle.dump(data_dict, f)
+        print('Dataset is saved via dictionary pickle')
+        print(f'Dataset path: {file_name_pickle}')
+    
+    def save_trn_to_csv(self, file_name: str) -> None:
+        '''.trn 파일을 .csv로 저장'''
+        data_dic = self.get_dataset_dict(file_name)
+        file_name_csv = file_name.split('.')[:-1]
+        file_name_csv = ''.join(file_name_csv) + '.csv'
+        if file_name.startswith('.'): # 이 경우(ex. ./~/bbb.trn) '', '/~/bbb', 'trn'로 split되기 때문에 맨 앞 점을 보존해주려고. 안그러면 절대경로가 됨
+            file_name_csv = '.' + file_name_csv
+        data_dic = pd.DataFrame(data_dic)
+        data_dic.to_csv(file_name_csv, index=False, header=False) # header : 제목 행(path,sentence) x 
+        print('Dataset is saved via csv')
+        print(f'Dataset path: {file_name_csv}')
+    
+    
+        
+# 아래 각 단락들의 테스트 중 실제 사용될 코드묶음은 argparser로 file 하부 명령어에 등록함
 if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     prepareds = PrepareDataset()
     
@@ -149,8 +200,16 @@ if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     # prepareds.convert_text_utf(file_path=text_file)
     
     # # 이렇게 하지 않고 argparser로 file 하부 명령어에 등록하여 모든 파일의 utf-8 변환 수행할 것임
-    # target_dir = 'data/audio/KsponSpeech_05'
-    # prepareds.convert_all_files_to_utf8(target_dir)
+    # prepareds.convert_all_files_to_utf8(source_dir)
     
-    target_file = 'data/info/train.trn'
-    prepareds.split_whole_data(target_file)
+    # target_file = 'data/info/train.trn'
+    # prepareds.split_whole_data(target_file)
+    
+    target_file = 'data/info/eval_clean.trn'
+    # data_dict = prepareds.get_dataset_dict(target_file)
+    # print(data_dict)
+    
+    # prepareds.save_trn_to_pkl(target_file)
+    prepareds.save_trn_to_csv(target_file)
+    
+    
