@@ -6,11 +6,35 @@ References:
 
 import argparse
 from datasets import load_dataset, DatasetDict
+from utils import get_unique_directory
 
 
 def get_config() -> argparse.ArgumentParser:
     '''Wisper finetuning args parsing function'''
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--base-model', '-b',
+        required=True,
+        help='Base model for tokenizer, processor, feature extraction. \
+            Ex. "openai/whisper-tiny", "openai/whisper=small", etc. from huggingface'
+    )
+    parser.add_argument( # fine-tune을 했으면 이어서 할 수 있음
+        '--pretrained-model', '-p',
+        default='',
+        help='Pre-trained model from huggingface or local computer. \
+            If not given, we will set the models same to --base-model (-b)'
+    )
+    parser.add_argument(
+        '--output-dir', '-o',
+        default='./model_output',
+        help='Directory for saving whisper finetune outputs'
+    )
+    parser.add_argument(
+        '--finetuned-model-dir', '-tf',
+        required=True,
+        help='Directory for saving fine-tuned model (best model after train)'
+    )
+    ###############
     parser.add_argument(
         '--train-set', '-t',
         required=True,
@@ -35,6 +59,29 @@ class Trainer:
     def __init__(self, config) -> None:
         '''Init all required args for whisper finetune'''
         self.config = config
+        
+        # 사전 학습 모델 - 2개
+        #   Base model -> tokenizer, feature_extractor, processor
+        #   pre-trained model
+        
+        if config.pretrained_model:
+            self.pretrained_model = config.pretrained_model
+        else:
+            print('\nPre-trained model is not given...')
+            print(f'We will set pre-trained model same to --base-model (-b): {config.base_model}\n')
+            self.pretrained_model = config.base_model
+        
+        self.output_dir = get_unique_directory(
+            dir_name=config.output_dir,
+            model_name=self.pretrained_model
+        )
+        self.finetuned_model_dir = get_unique_directory(
+            dir_name=config.finetuned_model_dir,
+            model_name=self.pretrained_model
+        )
+        print(f'\nTraining outputs will be saved -> {self.output_dir}')
+        print(f'Fine-tuned model will be saved -> {self.finetuned_model_dir}')
+        
     
     def load_dataset(self,) -> DatasetDict:
         '''Build dataset containing train/valid/test sets'''
