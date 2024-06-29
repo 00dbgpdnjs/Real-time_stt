@@ -222,6 +222,21 @@ class PrepareDataset:
                 f.write(line)
         print(f'Test_dataset saved -> {test_file} ({(1.0 - train_size)*100:.1f}%)')
     
+    def remove_all_text_files(self, target_dir: str, ext: str = 'txt') -> None:
+        '''디렉토리 내부의 모든 특정 형태 파일(in our case, txt) 삭제'''
+        print(f'Target directory: {target_dir}')
+        sub_directories = sorted(os.listdir(target_dir))
+        num_files = 0
+        for directory in tqdm(sub_directories, desc=f'Delete all {ext} files'):
+            files  = os.listdir(os.path.join(target_dir, directory))
+            for file_name in files:
+                if file_name.endswith(f'.{ext}'):
+                    os.remove(
+                        os.path.join(target_dir, directory, file_name)
+                    )
+                    num_files += 1
+        print(f'Removed {num_files} txt files')
+    
         
 # 아래 각 단락들의 테스트 중 실제 사용될 코드묶음은 argparser로 file 하부 명령어에 등록함
 if __name__ == '__main__': # 자기 자신으로 호출됐을 때
@@ -232,7 +247,7 @@ if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     
     # 01~05 다 wav로 변환해야 하는데 이렇게 하지 않고,
     # 터미널에서 입력이 가능한 형태로 바꿀 것임 (argparse 이용) 
-    # source_dir = 'data/audio/KsponSpeech_02'
+    source_dir = 'data/audio/KsponSpeech_02'
     # prepareds.process_audio(source_dir=source_dir)
     
     # 해당 파일 열고 $ python utiles.py 를 실행하여 utf-8로 변환됐는지(읽을 수 있는지) 확인
@@ -252,5 +267,8 @@ if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     # prepareds.save_trn_to_pkl(target_file)
     # prepareds.save_trn_to_csv(target_file)
     
-    target_file = './data/info/train_KsponSpeech_02.csv'
-    prepareds.split_train_test(target_file)
+    # target_file = './data/info/train_KsponSpeech_02.csv'
+    # prepareds.split_train_test(target_file)
+    
+    # prepareds.remove_all_text_files(source_dir)
+    pass

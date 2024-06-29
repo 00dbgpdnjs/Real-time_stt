@@ -23,29 +23,40 @@ def file_process(config) -> None:
         if not (
             config.csv or
             config.pkl or
-            config.split_whole_data
+            config.split_whole_data or
+            config.split_train_test
         ):
-            print(f'If --target-file (-t) is feed, \
-                one of --csv, --pkl, or \
-                --split_whole_data (-w) must be set.')
+            print(f'If --target-file (-t) is feed, one of --csv, --pkl, \
+--split-train-test (-s) or --split_whole_data (-w) must be set.')
             return
         
         if config.csv:
             preprocessor.save_trn_to_csv(config.target_file)
         if config.pkl:
             preprocessor.save_trn_to_pkl(config.target_file)
-        
         if config.split_whole_data:
             preprocessor.split_whole_data(config.target_file)
-    
+        if config.split_train_test:
+            preprocessor.split_train_test(
+                target_file=config.target_file,
+                train_size=config.ratio
+            )
     
     if config.convert_all_to_utf: # '--convert-all-to-utf' 인자가 이렇게 넘어옴
         if not config.target_dir:
             print('If --convert-all-to-utf (-c) flagged, you must feed --target-dir')
         preprocessor.convert_all_files_to_utf8(config.target_dir)
-    else:
-        if config.target_dir:
-            print('If --target-dir is feed, you must feed --convert-all-to-utf (-c)')
+    # else:
+    #     if config.target_dir:
+    #         print('If --target-dir is feed, you must feed --convert-all-to-utf (-c)')
+    if config.remove_all_text_files:
+        if not config.target_dir:
+            print('If --remove-all-text-files (-R) flagged, you must feed --target-dir')
+            return
+        preprocessor.remove_all_text_files(
+            target_dir=config.target_dir,
+            ext=config.remove_file_type    
+        )
 
     
 def get_parser() -> argparse.ArgumentParser:
@@ -78,7 +89,6 @@ def get_parser() -> argparse.ArgumentParser:
             or split file (train/test)'
     )
     
-    # TODO: file 관련 argument 추가
     parser_file.add_argument(
         '--target-file', '-t',
         # required=True,
@@ -110,6 +120,28 @@ def get_parser() -> argparse.ArgumentParser:
         '--pkl',
         action='store_true',
         help='Generate pickle file'
+    )
+    parser_file.add_argument(
+        '--split-train-test', '-s',
+        action='store_true',
+        help='Flag split train/test set, \
+            default: 0.8 (train:test -> 80:20)'
+    )
+    parser_file.add_argument(
+        '--ratio',
+        type=float,
+        default=0.8,
+        help='Split file into .train & .test files'
+    )
+    parser_file.add_argument(
+        '--remove-all-text-files', '-R',
+        action='store_true',
+        help='Remove all specific type files under target dir'
+    )
+    parser_file.add_argument(
+        '--remove-file-type',
+        default='txt',
+        help='Set remove file type'
     )
     
     parser_file.set_defaults(func=file_process)     
