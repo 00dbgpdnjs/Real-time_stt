@@ -100,8 +100,6 @@ class PrepareDataset:
                         os.path.join(target_dir, directory, file_name)
                     )
                     num_files += 1
-            if(num_files>120000):
-                break
         print(f'{num_files} txt files are converted.')
     
 if __name__ == '__main__': # 자기 자신으로 호출됐을 때
