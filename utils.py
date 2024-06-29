@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 class PrepareDataset:
     def __init__(self, audio_dir: str = './data/audio') -> None: 
-        self.VIOCE_DIR = audio_dir
+        self.VOICE_DIR = audio_dir
          
     def pcm2audio(
         self,
@@ -60,7 +60,6 @@ class PrepareDataset:
                 files = os.listdir(os.path.join(source_dir, directory))
                 for file_name in files:
                     if file_name.endswith('.pcm'):
-                        pass
                         self.pcm2audio(
                             audio_path=os.path.join(source_dir, directory, file_name),
                             ext='wav',
@@ -88,8 +87,22 @@ class PrepareDataset:
             for line in lines:
                 f.write(line)
     
-    # def convert_all_files_to_utf8(self, target_dir: str) -> None:
-    #     '''디렉토리 내부의 모든 텍스트 파일을 utf-8 '''
+    def convert_all_files_to_utf8(self, target_dir: str) -> None:
+        '''디렉토리 내부의 모든 텍스트 파일을 utf-8 '''
+        print(f'Target directory: {target_dir}')
+        sub_directories = sorted(os.listdir(target_dir))
+        num_files = 0
+        for directory in tqdm(sub_directories, desc='converting cp949 -> utf8'):
+            files = sorted(os.listdir(os.path.join(target_dir, directory)))
+            for file_name in files:
+                if file_name.endswith('.txt'):
+                    self.convert_text_utf(
+                        os.path.join(target_dir, directory, file_name)
+                    )
+                    num_files += 1
+            if(num_files>120000):
+                break
+        print(f'{num_files} txt files are converted.')
     
 if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     # audio = 'data/audio/eval_clean/KsponSpeech_E00001.pcm'
@@ -98,12 +111,17 @@ if __name__ == '__main__': # 자기 자신으로 호출됐을 때
     
     # 01~05 다 wav로 변환해야 하는데 이렇게 하지 않고,
     # 터미널에서 입력이 가능한 형태로 바꿀 것임 (argparse 이용) 
-    source_dir = 'data/audio/KsponSpeech_02'
-    prepareds = PrepareDataset()
-    prepareds.process_audio(source_dir=source_dir)
+    # source_dir = 'data/audio/KsponSpeech_02'
+    # prepareds = PrepareDataset()
+    # prepareds.process_audio(source_dir=source_dir)
     
     # 해당 파일 열고 $ python utiles.py 를 실행하여 utf-8로 변환됐는지(읽을 수 있는지) 확인
     # text_file = 'data/audio/KsponSpeech_05/KsponSpeech_0497/KsponSpeech_496001.txt'
     
     # prepareds = PrepareDataset()
     # prepareds.convert_text_utf(file_path=text_file)
+    
+    # 이렇게 하지 않고 argparser로 file 하부 명령어에 등록하여 모든 파일의 utf-8 변환 수행할 것임
+    target_dir = 'data/audio/KsponSpeech_05'
+    prepareds = PrepareDataset()
+    prepareds.convert_all_files_to_utf8(target_dir)
