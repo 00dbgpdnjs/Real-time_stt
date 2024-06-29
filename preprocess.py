@@ -17,8 +17,14 @@ def audio_process(config) -> None:
     )
     
 def file_process(config) -> None:
+    print('(--target-file과 --split-whole-data, --convert-all-to-utf와 --target-dir는 각각 한 쌍입니다.\
+        아무 출력/변경이 일어나지 않으면 참고하세요.)')
     print('Start file processing')
     preprocessor = PrepareDataset()
+    if config.target_file:
+        if config.split_whole_data:
+            preprocessor.split_whole_data(config.target_file)
+    
     if config.convert_all_to_utf: # '--convert-all-to-utf' 인자가 이렇게 넘어옴
         if not config.target_dir:
             print('If --convert-all-to-utf (-c) flagged, you must feed --target-dir')
@@ -56,6 +62,12 @@ def get_parser() -> argparse.ArgumentParser:
     
     # TODO: file 관련 argument 추가
     parser_file.add_argument(
+        '--target-file', '-t',
+        # required=True,
+        help='Target file name for processing'
+    )
+    
+    parser_file.add_argument(
         '--convert-all-to-utf', # 실제로는 convert_all_to_utf 로 전달됨
         '-c', 
         action='store_true',
@@ -64,9 +76,15 @@ def get_parser() -> argparse.ArgumentParser:
     
     parser_file.add_argument(
         '--target-dir', '-d',
-        required=True,
+        # required=True,
         help='Target directory for converting file encoding to utf-8\
             Use by combining --convert-all-to-utf (-c) flag'
+    )
+    
+    parser_file.add_argument(
+        '--split-whole-data', '-w',
+        action='store_true',
+        help='Split whole data file int group'
     )
     
     parser_file.set_defaults(func=file_process)     
