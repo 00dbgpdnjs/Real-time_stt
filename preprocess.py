@@ -18,6 +18,11 @@ def audio_process(config) -> None:
     
 def file_process(config) -> None:
     print('Start file processing')
+    preprocessor = PrepareDataset()
+    if config.convert_all_to_utf: # '--convert-all-to-utf' 인자가 이렇게 넘어옴
+        if not config.target_dir:
+            print('If --convert-all-to-utf (-c) flagged, you must feed --target-dir')
+        preprocessor.convert_all_files_to_utf8(config.target_dir)
     
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -50,6 +55,19 @@ def get_parser() -> argparse.ArgumentParser:
     )
     
     # TODO: file 관련 argument 추가
+    parser_file.add_argument(
+        '--convert-all-to-utf', # 실제로는 convert_all_to_utf 로 전달됨
+        '-c', 
+        action='store_true',
+        help='Convert all text files to utf-8 under target_dir'
+    )
+    
+    parser_file.add_argument(
+        '--target-dir', '-d',
+        required=True,
+        help='Target directory for converting file encoding to utf-8\
+            Use by combining --convert-all-to-utf (-c) flag'
+    )
     
     parser_file.set_defaults(func=file_process)     
     
