@@ -102,24 +102,55 @@ class PrepareDataset:
                     num_files += 1
         print(f'{num_files} txt files are converted.')
     
+    def split_whole_data(self, target_file:str) -> None:
+        '''전체 데이터 파일 (train.trn)을 그룹별로 구분
+        For example, in train.trn file
+            KsponSpeech_01/KsponSpeech_0001/KsponSpeech_000001.pcm :: 'some txt'
+                -> this file will be stored in train_KsponSpeech_01.trn
+            KsponSpeech_02/KsponSpeech_0125/KsponSpeech_124001.pcm :: 'some txt'
+                -> this file will be stored in train_KsponSpeech_02.trn
+        '''
+        with open(target_file, 'rt') as f: # 이미 utf-8로 인코딩해서(읽을 수 있어서) encoding 파라미터는 전달안해도됨
+            lines = f.readlines()
+            data_group = set()
+            for line in lines:
+                data_group.add(line.split('/')[0]) # 1st: ex) KsponSpeech_01
+        data_group = sorted(list(data_group))
+        data_dic = { group: [] for group in data_group} # 'group: []'는 for문의 'data_dic[group] = []' 과 동일
+        for line in lines:
+            data_dic[line.split('/')[0]].append(line)
+        # Save file seperately
+        # target_file: data/info/train.trn
+        # 아래 두 라인 보다 os.path.dirname(file_path) 가 더 안전
+        save_dir = target_file.split('/')[:-1]
+        save_dir = '/'.join(save_dir)
+        for group, line_list in data_dic.items():
+            file_path = os.path.join(save_dir, f'train_{group}.trn')
+            with open(file_path, 'wt', encoding='utf-8') as f:
+                for text in line_list:
+                    f.write(text)
+                print(f'File created -> {file_path}')
+        print('Done!')
+        
+    
 if __name__ == '__main__': # 자기 자신으로 호출됐을 때
+    prepareds = PrepareDataset()
+    
     # audio = 'data/audio/eval_clean/KsponSpeech_E00001.pcm'
-    # prepareds = PrepareDataset()
     # prepareds.pcm2audio(audio_path=audio) # 듣고 wav, wav 지우기
     
     # 01~05 다 wav로 변환해야 하는데 이렇게 하지 않고,
     # 터미널에서 입력이 가능한 형태로 바꿀 것임 (argparse 이용) 
     # source_dir = 'data/audio/KsponSpeech_02'
-    # prepareds = PrepareDataset()
     # prepareds.process_audio(source_dir=source_dir)
     
     # 해당 파일 열고 $ python utiles.py 를 실행하여 utf-8로 변환됐는지(읽을 수 있는지) 확인
-    # text_file = 'data/audio/KsponSpeech_05/KsponSpeech_0497/KsponSpeech_496001.txt'
-    
-    # prepareds = PrepareDataset()
+    # text_file = 'data/audio/KsponSpeech_05/KsponSpeech_0497/KsponSpeech_496001.txt'    
     # prepareds.convert_text_utf(file_path=text_file)
     
-    # 이렇게 하지 않고 argparser로 file 하부 명령어에 등록하여 모든 파일의 utf-8 변환 수행할 것임
-    target_dir = 'data/audio/KsponSpeech_05'
-    prepareds = PrepareDataset()
-    prepareds.convert_all_files_to_utf8(target_dir)
+    # # 이렇게 하지 않고 argparser로 file 하부 명령어에 등록하여 모든 파일의 utf-8 변환 수행할 것임
+    # target_dir = 'data/audio/KsponSpeech_05'
+    # prepareds.convert_all_files_to_utf8(target_dir)
+    
+    target_file = 'data/info/train.trn'
+    prepareds.split_whole_data(target_file)
