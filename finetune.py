@@ -7,10 +7,14 @@ References:
 import argparse
 from datasets import load_dataset, DatasetDict
 from utils import get_unique_directory
-
+from transformers import (
+    WhisperFeatureExtractor,
+    WhisperTokenizer,
+    WhisperProcessor
+)
 
 def get_config() -> argparse.ArgumentParser:
-    '''Wisper finetuning args parsing function'''
+    '''Whisper finetuning args parsing function'''
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base-model', '-b',
@@ -30,7 +34,7 @@ def get_config() -> argparse.ArgumentParser:
         help='Directory for saving whisper finetune outputs'
     )
     parser.add_argument(
-        '--finetuned-model-dir', '-tf',
+        '--finetuned-model-dir', '-ft',
         required=True,
         help='Directory for saving fine-tuned model (best model after train)'
     )
@@ -49,6 +53,16 @@ def get_config() -> argparse.ArgumentParser:
         '--test-set', '-e',
         required=True,
         help='Test dataset name (file name or file path)'
+    )
+    parser.add_argument(
+        '--lang',
+        default='Korean',
+        help='Language for fine-tuning, default: Korean'
+    )
+    parser.add_argument(
+        '--task',
+        default='transcribe',
+        help='transcribe or translate, default: transcribe'
     )
     config = parser.parse_args()
     return config
@@ -82,6 +96,26 @@ class Trainer:
         print(f'\nTraining outputs will be saved -> {self.output_dir}')
         print(f'Fine-tuned model will be saved -> {self.finetuned_model_dir}')
         
+        # Feature Extractor 등록
+        self.feature_extractor = WhisperFeatureExtractor.from_pretrained(
+            config.base_model
+        )
+        
+        self.tokenizer = WhisperTokenizer.from_pretrained(
+            pretrained_model_name_or_path=config.base_model, 
+            language=config.lang, 
+            task=config.task
+        )
+        
+        # Processor 등록
+        self.processor = WhisperProcessor.from_pretrained(
+            pretrained_model_name_or_path=config.base_model, 
+            language=config.lang, 
+            task=config.task
+        )
+
+
+    
     
     def load_dataset(self,) -> DatasetDict:
         '''Build dataset containing train/valid/test sets'''
@@ -130,3 +164,14 @@ if __name__ == '__main__':
     trainer = Trainer(config)
     result = trainer.load_dataset()
     print(result)
+    
+    print(result['train'][0])
+    input_str = result['train'][0]['sentence']
+    print(f'\ninput_str: {input_str}')
+    labels = trainer.tokenizer(input_str).input_ids
+    print(f'\nlabels: {labels}')
+    decoded_str_with_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=False)
+    print(f'\ndecoded w/ special: \t {decoded_str_with_special_tokens}')
+    decoded_str_without_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=True)
+    print(f'\ndecoded w/o special: \t {decoded_str_without_special_tokens}')
+    print(input_str == decoded_str_without_special_tokens)
