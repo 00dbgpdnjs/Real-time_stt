@@ -2,3 +2,17 @@ numpy
 librosa
 tqdm
 pandas
+
+# --index-url https://download.pytorch.org/whl/cu118
+torch 
+torchvision 
+torchaudio
+
+# --upgrade
+datasets[audio] 
+transformers 
+accelerate 
+evaluate 
+jiwer 
+tensorboard 
+gradio

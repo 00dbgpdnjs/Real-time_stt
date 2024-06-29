@@ -18,7 +18,8 @@
 
 ### data/info
 - 이 폴더에는 포함되어야 할 내용
-    - 단, csv는 $ python preprocess.py file -t data/info/train_KsponSpeech_05.trn --csv 와 같이 생성
+    - 단, _test.csv 또는 _train.csv 으로 끝나는 파일은 $ python preprocess.py file -t data/info/train_KsponSpeech_05.csv -s 와 같이 생성 
+    - 그냥 csv는 $ python preprocess.py file -t data/info/train_KsponSpeech_05.trn --csv 와 같이 생성
 - `dev.trn`
 - `eval_clean.csv`
 - `eval_clean.trn`
