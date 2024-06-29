@@ -18,32 +18,33 @@
 
 ### data/info
 - 이 폴더에는 포함되어야 할 내용
-    - `dev.trn`
-    - `eval_clean.csv`
-    - `eval_clean.trn`
-    - `eval_other.csv`
-    - `eval_other.trn`
-    - `train.csv`
-    - `train.trn`
-    - `train_KsponSpeech_01.csv`
-    - `train_KsponSpeech_01.trn`
-    - `train_KsponSpeech_01_test.csv`
-    - `train_KsponSpeech_01_train.csv`
-    - `train_KsponSpeech_02.csv`
-    - `train_KsponSpeech_02.trn`
-    - `train_KsponSpeech_02_test.csv`
-    - `train_KsponSpeech_02_train.csv`
-    - `train_KsponSpeech_03.csv`
-    - `train_KsponSpeech_03.trn`
-    - `train_KsponSpeech_03_test.csv`
-    - `train_KsponSpeech_03_train.csv`
-    - `train_KsponSpeech_04.csv`
-    - `train_KsponSpeech_04.trn`
-    - `train_KsponSpeech_04_test.csv`
-    - `train_KsponSpeech_04_train.csv`
-    - `train_KsponSpeech_05.csv`
-    - `train_KsponSpeech_05.trn`
-    - `train_KsponSpeech_05_test.csv`
-    - `train_KsponSpeech_05_train.csv`
-    - `train_test.csv`
-    - `train_train.csv`
+    - 단, csv는 $ python preprocess.py file -t data/info/train_KsponSpeech_05.trn --csv 와 같이 생성
+- `dev.trn`
+- `eval_clean.csv`
+- `eval_clean.trn`
+- `eval_other.csv`
+- `eval_other.trn`
+- `train.csv`
+- `train.trn`
+- `train_KsponSpeech_01.csv`
+- `train_KsponSpeech_01.trn`
+- `train_KsponSpeech_01_test.csv`
+- `train_KsponSpeech_01_train.csv`
+- `train_KsponSpeech_02.csv`
+- `train_KsponSpeech_02.trn`
+- `train_KsponSpeech_02_test.csv`
+- `train_KsponSpeech_02_train.csv`
+- `train_KsponSpeech_03.csv`
+- `train_KsponSpeech_03.trn`
+- `train_KsponSpeech_03_test.csv`
+- `train_KsponSpeech_03_train.csv`
+- `train_KsponSpeech_04.csv`
+- `train_KsponSpeech_04.trn`
+- `train_KsponSpeech_04_test.csv`
+- `train_KsponSpeech_04_train.csv`
+- `train_KsponSpeech_05.csv`
+- `train_KsponSpeech_05.trn`
+- `train_KsponSpeech_05_test.csv`
+- `train_KsponSpeech_05_train.csv`
+- `train_test.csv`
+- `train_train.csv`
