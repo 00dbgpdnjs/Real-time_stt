@@ -5,6 +5,7 @@ References:
 '''
 
 import argparse
+import numpy as np
 from datasets import load_dataset, DatasetDict
 from utils import get_unique_directory
 from transformers import (
@@ -12,6 +13,7 @@ from transformers import (
     WhisperTokenizer,
     WhisperProcessor
 )
+from scipy.io.wavfile import read
 
 def get_config() -> argparse.ArgumentParser:
     '''Whisper finetuning args parsing function'''
@@ -20,7 +22,7 @@ def get_config() -> argparse.ArgumentParser:
         '--base-model', '-b',
         required=True,
         help='Base model for tokenizer, processor, feature extraction. \
-            Ex. "openai/whisper-tiny", "openai/whisper=small", etc. from huggingface'
+            Ex. "openai/whisper-tiny", "openai/whisper-small", etc. from huggingface'
     )
     parser.add_argument( # fine-tune을 했으면 이어서 할 수 있음
         '--pretrained-model', '-p',
@@ -63,6 +65,12 @@ def get_config() -> argparse.ArgumentParser:
         '--task',
         default='transcribe',
         help='transcribe or translate, default: transcribe'
+    )
+    parser.add_argument(
+        '--sample-rate',
+        type=int,
+        default=16000,
+        help='Sampling rate for voice(audio) file, default: 16,000'
     )
     config = parser.parse_args()
     return config
@@ -113,9 +121,6 @@ class Trainer:
             language=config.lang, 
             task=config.task
         )
-
-
-    
     
     def load_dataset(self,) -> DatasetDict:
         '''Build dataset containing train/valid/test sets'''
@@ -144,10 +149,40 @@ class Trainer:
         '''Prepare evaluation metric (wer, cer, etc.)'''
     
     def prepare_dataset(self, batch):
-         '''Get input features with numpy array & sentence labels'''
+        '''Get input features with numpy array & sentence labels'''
+        audio = batch["path"]
+        _, data = read(audio)
+        audio_array = np.array(data, dtype=np.float32) # 사이트에 float32로 하라고 나와있음
+        
+
+        # compute log-Mel input features from input audio array 
+        batch["input_features"] = self.feature_extractor(
+            audio_array, 
+            sampling_rate=config.sample_rate
+        ).input_features[0]
+
+        # encode target text to label ids 
+        batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
+        return batch
     
-    def process_dataset(self, dataset) -> tuple:
+    def process_dataset(self, dataset: DatasetDict) -> tuple:
         '''Process loaded dataset applying prepare_dataset()'''
+        train = dataset['train'].map(
+            function=self.prepare_dataset,
+            remove_columns=dataset.column_names['train'],
+            num_proc=8
+        )
+        valid = dataset['valid'].map(
+            function=self.prepare_dataset,
+            remove_columns=dataset.column_names['valid'],
+            num_proc=8
+        )
+        test = dataset['test'].map(
+            function=self.prepare_dataset,
+            remove_columns=dataset.column_names['test'],
+            num_proc=8
+        )
+        return (train, valid, test)
     
     def enforce_fine_tune_lang(self) -> None:
         '''Enforce fine-tune language'''
@@ -162,16 +197,19 @@ class Trainer:
 if __name__ == '__main__':
     config = get_config()
     trainer = Trainer(config)
-    result = trainer.load_dataset()
-    print(result)
+    dataset = trainer.load_dataset()
+    print(dataset)
     
-    print(result['train'][0])
-    input_str = result['train'][0]['sentence']
-    print(f'\ninput_str: {input_str}')
-    labels = trainer.tokenizer(input_str).input_ids
-    print(f'\nlabels: {labels}')
-    decoded_str_with_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=False)
-    print(f'\ndecoded w/ special: \t {decoded_str_with_special_tokens}')
-    decoded_str_without_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=True)
-    print(f'\ndecoded w/o special: \t {decoded_str_without_special_tokens}')
-    print(input_str == decoded_str_without_special_tokens)
+    # print(dataset['train'][0])
+    # input_str = dataset['train'][0]['sentence']
+    # print(f'\ninput_str: {input_str}')
+    # labels = trainer.tokenizer(input_str).input_ids
+    # print(f'\nlabels: {labels}')
+    # decoded_str_with_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=False)
+    # print(f'\ndecoded w/ special: \t {decoded_str_with_special_tokens}')
+    # decoded_str_without_special_tokens = trainer.tokenizer.decode(labels, skip_special_tokens=True)
+    # print(f'\ndecoded w/o special: \t {decoded_str_without_special_tokens}')
+    # print(input_str == decoded_str_without_special_tokens)
+    
+    train, valid, test = trainer.process_dataset(dataset)
+    print(train)
