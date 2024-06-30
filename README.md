@@ -49,3 +49,19 @@
 - `train_KsponSpeech_05_train.csv`
 - `train_test.csv`
 - `train_train.csv`
+
+## train
+학습 관련 추가해야 할 폴더
+
+- model_archive/
+- model_finetuned/ 
+    - 파인튜닝 완료된 베스트 모델이 저장될 폴더
+- model_output/
+    - 매 학습이 끝나면 checkpoint 폴더 자동 생성
+
+###  참고사항
+- 추론 단계에서 --base-model 옵션을 이용해 파인튜팅 된 모델과 base-model을 맞춰줘야 합니다.
+- (예시)
+	- 파인 튜닝된 whisper-small 모델 적용 시 --base-model openai/whisper-small 적용
+	- 파인 튜닝된 whisper-medium 모델 적용 시 --base-model openai/whisper-medium 적용
+

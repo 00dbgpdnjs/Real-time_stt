@@ -157,10 +157,10 @@ class Trainer:
             per_device_eval_batch_size=8,   # 16, 32, ..
             predict_with_generate=True,
             generation_max_length=225,
-            # save_steps=1000,                # 1000 스텝[1000배치]마다 저장 
-            # eval_steps=1000, 
-            save_steps=200, # for toy : 훈련 시작하면 "8%|█  | 8/96"  여기서 96이 스텝 즉 10/96 이 되면 저장됨     
-            eval_steps=200, 
+            save_steps=1000,                # 1000 스텝[1000배치]마다 저장 
+            eval_steps=1000, 
+            # save_steps=200, # for toy : 훈련 시작하면 "8%|█  | 8/96"  여기서 96이 스텝 즉 10/96 이 되면 저장됨     
+            # eval_steps=200, 
             logging_steps=100,              # 공식 홈페이지: 25
             # report_to=["tensorboard"],
             load_best_model_at_end=True,
@@ -236,7 +236,7 @@ class Trainer:
         train = dataset['train'].map(
             function=self.prepare_dataset,
             remove_columns=dataset.column_names['train'],
-            num_proc=8
+            num_proc=8 # num_proc 3개다 1로 해야 제일 빨랐음 
         )
         print('\nStart valid dataset mapping')
         print(dataset['valid'])
