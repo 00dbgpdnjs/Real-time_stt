@@ -3,7 +3,7 @@ import torch
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
 
-
+@dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
     processor: Any
     decoder_start_token_id: int

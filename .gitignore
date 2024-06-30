@@ -162,4 +162,7 @@ cython_debug/
 #.idea/
 
 
-data
+data/
+model_archive/
+model_finetuned/
+model_output/
