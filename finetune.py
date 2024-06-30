@@ -5,13 +5,16 @@ References:
 '''
 
 import argparse
+import evaluate
 import numpy as np
 from datasets import load_dataset, DatasetDict
+from trainer.collator import DataCollatorSpeechSeq2SeqWithPadding
 from utils import get_unique_directory
 from transformers import (
     WhisperFeatureExtractor,
     WhisperTokenizer,
-    WhisperProcessor
+    WhisperProcessor,
+    WhisperForConditionalGeneration
 )
 from scipy.io.wavfile import read
 
@@ -72,6 +75,11 @@ def get_config() -> argparse.ArgumentParser:
         default=16000,
         help='Sampling rate for voice(audio) file, default: 16,000'
     )
+    parser.add_argument(
+        '--metric',
+        default='cer',
+        help='evaluation metric (wer, cer, ...), default: cer'
+    )
     config = parser.parse_args()
     return config
     
@@ -121,6 +129,15 @@ class Trainer:
             language=config.lang, 
             task=config.task
         )
+        
+        # 모델 생성
+        self.model = WhisperForConditionalGeneration.from_pretrained(self.pretrained_model)
+        
+        # collator for label 
+        self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(
+            processor=self.processor,
+            decoder_start_token_id=self.model.config.decoder_start_token_id, # sos: 안주면 0
+        )
     
     def load_dataset(self,) -> DatasetDict:
         '''Build dataset containing train/valid/test sets'''
@@ -145,8 +162,24 @@ class Trainer:
         )
         return dataset
     
-    def compute_metrics(self, pred) -> dict:
+    def compute_metrics(self, pred) -> dict: # prediction 때 사용됨
         '''Prepare evaluation metric (wer, cer, etc.)'''
+        # 음성인식(ASR) 모델 error_rate 측정 방법
+        # - wer: word error rate 
+        # - cer: char error rate
+        # -> 영어는 조사가 없어서 wer, 한국어는 조사가 있어서 cer이 낫음
+        metric = evaluate.load(self.config.metric) # param : wer or cer
+        pred_ids = pred.predictions
+        label_ids = pred.label_ids
+
+        # replace -100 with the pad_token_id
+        label_ids[label_ids == -100] = self.tokenizer.pad_token_id
+
+        # we do not want to group tokens when computing the metrics
+        pred_str = self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+        label_str = self.tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+        error_rate = 100 * metric.compute(predictions=pred_str, references=label_str)
+        return {f"{self.config.metric}": error_rate} # 그럴리는 없겠지만 혹시나 문자열이 아닐까바 f string
     
     def prepare_dataset(self, batch):
         '''Get input features with numpy array & sentence labels'''
@@ -186,6 +219,20 @@ class Trainer:
     
     def enforce_fine_tune_lang(self) -> None:
         '''Enforce fine-tune language'''
+        self.model.config.suppress_tokes = []
+        self.model.generation_config.suppress_tokens = []
+        
+        # model config issue (https://github.com/huggingface/transformers/issues/21994) 해결 코드
+        self.model.config.forced_decoder_ids = self.processor.tokenizer.get_decoder_prompt_ids(
+            language=config.lang,
+            task=config.task,
+        )
+        
+        # model config issue (https://github.com/huggingface/transformers/issues/21994) 해결 코드
+        self.model.generation_config.forced_decoder_ids = self.processor.tokenizer.get_decoder_prompt_ids(
+            language=config.lang,
+            task=config.task,
+        )
     
     def create_trainer(self, train, valid) -> None:
         '''Create seq2seq trainer'''
@@ -213,3 +260,5 @@ if __name__ == '__main__':
     
     train, valid, test = trainer.process_dataset(dataset)
     print(train)
+    
+    
